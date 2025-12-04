@@ -1,8 +1,8 @@
 use std::{error::Error, io::{self, Write}};
 pub struct Config {
-    path: String,
-    start_range: i32,
-    end_range: i32
+    pub path: String,
+    pub start_range: i32,
+    pub end_range: i32
 }
 
 impl Config {
