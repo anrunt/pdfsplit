@@ -1,16 +1,4 @@
-use pdf_splitter::{Config};
-use lopdf::Document;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
-
-fn load_pdf<P: AsRef<Path>>(path: P) -> Result<Document, lopdf::Error> {
-    let file = File::open(path)?;
-
-    let reader = BufReader::new(file);
-
-    Document::load_from(reader)
-}
+use pdf_splitter::{Config, build_extracted_pdf, load_pdf};
 
 fn main() {
     let config = Config::build();
@@ -22,13 +10,18 @@ fn main() {
         }
     }
 
-    match load_pdf(config.unwrap().path) {
+    let config = config.unwrap();
+
+    match load_pdf(&config.path) {
         Ok(doc) => {
             let page_count = doc.get_pages().len();
             println!("PDF loaded with {} pages", page_count);
+
+            build_extracted_pdf(&doc, &config);
         },
         Err(e) => {
             eprintln!("Error with loading file: {}", e);
         }
     }
+
 }

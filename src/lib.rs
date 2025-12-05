@@ -1,8 +1,13 @@
 use std::{error::Error, io::{self, Write}};
+use lopdf::Document;
+use std::fs::File;
+use std::io::BufReader;
+use std::path::Path;
+
 pub struct Config {
     pub path: String,
-    pub start_range: i32,
-    pub end_range: i32
+    pub start_range: u32,
+    pub end_range: u32
 }
 
 impl Config {
@@ -20,12 +25,12 @@ impl Config {
         let mut iter = input.split_whitespace();
 
         // Check if start_range is not bigger than end range
-        let start_range: i32 = iter.next()
+        let start_range: u32 = iter.next()
             .ok_or("Missing range argument (should be 2 only 1 provided)")?
             .parse()
             .map_err(|_| "Erorr with start_range")?;
 
-        let end_range: i32 = iter.next()
+        let end_range: u32 = iter.next()
             .ok_or("Missing range argument (should be 2 only 1 provided)")?
             .parse()
             .map_err(|_| "Error with end_range")?;
@@ -75,4 +80,30 @@ pub fn parse_and_validate_filename(input: &str) -> Result<String, Box<dyn Error>
     }
 
     Ok(path)
+}
+
+pub fn load_pdf<P: AsRef<Path>>(path: P) -> Result<Document, lopdf::Error> {
+    let file = File::open(path)?;
+
+    let reader = BufReader::new(file);
+
+    Document::load_from(reader)
+}
+
+pub fn build_extracted_pdf(doc: &Document, config: &Config) {
+    let mut new_doc = doc.clone();
+
+    let start_range = config.start_range;
+    let end_range = config.end_range;
+
+    let all_pages_length = new_doc.get_pages().len() as u32;
+
+    let delete_page_vec: Vec<u32> = (1..start_range).chain((end_range + 1)..=all_pages_length).collect();
+
+    new_doc.delete_pages(&delete_page_vec);
+
+    match new_doc.save("output.pdf") {
+        Ok(_) => println!("Successfully extracted pdf!"),
+        Err(e) => println!("Error with saving new pdf: {}" , e)
+    }
 }
